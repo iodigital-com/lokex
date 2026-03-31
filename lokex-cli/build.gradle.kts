@@ -4,6 +4,10 @@ plugins {
     application
 }
 
+application {
+    mainClass.set("com.iodigital.lokex.MainKt")
+}
+
 kotlin {
     jvm()
 
@@ -16,16 +20,25 @@ kotlin {
     }
 }
 
+// Wire the application plugin to use the KMP JVM jar and its runtime classpath
+// so the generated launcher script has the correct classpath entries.
+val jvmJar by tasks.getting(Jar::class)
+val jvmRuntimeClasspath by configurations.getting
+
+tasks.named<CreateStartScripts>("startScripts") {
+    classpath = files(jvmJar.archiveFile) + jvmRuntimeClasspath
+}
+
 distributions {
     main {
         distributionBaseName.set("lokex")
         contents {
             into("") {
-                val jvmJar by tasks.getting
                 from(jvmJar)
                 from("src/lokex")
             }
             into("lib/") {
+                from(jvmJar)
                 val main by kotlin.jvm().compilations.getting
                 from(main.runtimeDependencyFiles)
             }
